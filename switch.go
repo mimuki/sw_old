@@ -2,60 +2,64 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 )
 
-func (c *commands) cmdSwitch(args ...string) {
+func (c *commands) cmdSwitch(args ...string) error {
 	var in string
 
-	members := make([]string, 0)
-	memberNames := make([]string, 0)
+	var toSwitch, names []string
 	if len(args) == 0 {
-		members = []string{}
-		memberNames = []string{"no fronter"}
+		toSwitch = []string{}
+		names = []string{"(no fronter)"}
 	} else {
-		m, err := c.session.GetMembers("")
+		sys, err := c.session.Me(false)
 		if err != nil {
-			fmt.Println("Error getting members:", err)
-			os.Exit(1)
+			return fmt.Errorf("getting system: %w", err)
 		}
 
-		names, _ := m.ToMaps()
+		members, err := c.session.Members(sys.ID)
+		if err != nil {
+			return fmt.Errorf("getting members: %w", err)
+		}
 
 		for _, name := range args {
-			for n, id := range names {
-				if strings.ToLower(name) == n {
-					members = append(members, id)
-					memberNames = append(memberNames, n)
+			found := false
+			for _, m := range members {
+				if strings.EqualFold(name, m.Name) {
+					found = true
+					toSwitch = append(toSwitch, m.ID)
+					names = append(names, m.Name)
 					break
-				} else if strings.ToLower(name) == id {
-					members = append(members, id)
-					memberNames = append(memberNames, n)
+				} else if strings.EqualFold(name, m.ID) {
+					found = true
+					toSwitch = append(toSwitch, m.ID)
+					names = append(names, m.Name)
 					break
 				}
+			}
+			if !found {
+				return fmt.Errorf("no member named \"%v\" found. Note that a member ID is 5 characters long", name)
 			}
 		}
 	}
 
-	fmt.Printf("Are you sure you want to switch in the following members?\n%v\n", strings.Join(memberNames, ", "))
+	fmt.Printf("Are you sure you want to switch in the following members?\n%v\n", strings.Join(names, ", "))
 	_, err := fmt.Scanln(&in)
 	if err != nil {
-		fmt.Println("Error getting input:", err)
-		os.Exit(1)
+		return fmt.Errorf("error getting input: %w", err)
 	}
 
 	switch in {
 	case "yes", "y":
-		err = c.session.RegisterSwitch(members...)
+		err = c.session.RegisterSwitch(toSwitch...)
 		if err != nil {
-			fmt.Printf("Error switching [%v] in: %v\n", strings.Join(memberNames, ", "), err)
-			os.Exit(1)
+			return fmt.Errorf("error switching [%v] in: %w", strings.Join(names, ", "), err)
 		}
-		fmt.Printf("Switch registered. Current fronters are now %v.\n", strings.Join(memberNames, ", "))
-		return
+		fmt.Printf("Switch registered. Current fronters are now %v.\n", strings.Join(names, ", "))
+		return nil
 	default:
 		fmt.Println("Switch aborted.")
-		return
+		return nil
 	}
 }

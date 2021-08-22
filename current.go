@@ -2,29 +2,37 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 )
 
-func (c *commands) current() {
-	fronters, err := c.session.GetFronters("")
+func (c *commands) current() error {
+	fronters, err := c.session.Fronters("")
 	if err != nil {
-		fmt.Println("Error getting fronters:", err)
-		os.Exit(1)
+		return fmt.Errorf("getting fronters: %w", err)
 	}
 
-	f := make([]string, 0)
+	var f []string
 	for _, m := range fronters.Members {
-		f = append(f, fmt.Sprintf("%v (%v)", m.DisplayedName(), m.ID))
+		name := m.Name
+		if m.DisplayName != "" {
+			name = m.DisplayName
+		}
+
+		f = append(f, fmt.Sprintf("%v (%v)", name, m.ID))
 	}
 	if len(f) == 0 {
 		f = []string{"(no fronter)"}
 	}
 
-	name := c.sys.Name
+	sys, err := c.session.Me(false)
+	if err != nil {
+		return fmt.Errorf("getting system: %w", err)
+	}
+
+	name := sys.Name
 	if name == "" {
-		name = c.sys.ID
+		name = sys.ID
 	}
 	fmt.Printf("Current fronters for %v:\n%v\n", name, strings.Join(f, "\n"))
-	return
+	return nil
 }
