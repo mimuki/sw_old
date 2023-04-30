@@ -1,4 +1,5 @@
 # `sw`
+Warning: this is for my own tinkering, and does stuff beyond the original- if you're thinking of using this for your own tinkering, don't (or, more accurately, remember to take out the random crap I've tacked on)
 
 ## Usage
 
