@@ -58,10 +58,6 @@ func (c *commands) cmdSwitch(args ...string) error {
       return fmt.Errorf("error switching [%v] in: %w", strings.Join(names, ", "), err)
     }
     fmt.Printf("Switch registered. Current fronters are now %v.\n", strings.Join(names, ", "))
-    script := exec.Command("bash", "/home/mimuki/.config/awesome/scripts/update.sh")
-    cmd := script.Run()
-    if cmd != nil { panic (cmd) }
-    return nil
   default:
     fmt.Println("Switch aborted.")
     return nil
